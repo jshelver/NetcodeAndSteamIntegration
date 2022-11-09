@@ -5,6 +5,7 @@ using Netcode.Transports.Facepunch;
 using Steamworks;
 using Steamworks.Data;
 using Unity.Netcode;
+using UnityEngine.SceneManagement;
 
 public class GameNetworkManager : MonoBehaviour
 {
@@ -66,20 +67,20 @@ public class GameNetworkManager : MonoBehaviour
 
     public async void StartHost(int maxClients = 100)
     {
-        NetworkManager.Singleton.OnServerStarted += OnServerStarted;
+        // NetworkManager.Singleton.OnServerStarted += OnServerStarted;
 
-        if (NetworkManager.Singleton.StartHost())
-            Debug.Log("Host Started");
-        else
-            Debug.Log("Host Failed to Start");
+        // if (NetworkManager.Singleton.StartHost())
+        //     Debug.Log("Host Started");
+        // else
+        //     Debug.Log("Host Failed to Start");
 
         await SteamMatchmaking.CreateLobbyAsync(maxClients);
     }
 
     public void StartClient(SteamId steamId, Lobby lobby)
     {
-        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
+        // NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+        // NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
 
         string lobbyName = lobby.GetData("name");
 
@@ -87,10 +88,10 @@ public class GameNetworkManager : MonoBehaviour
 
         transport.targetSteamId = steamId;
 
-        if (NetworkManager.Singleton.StartClient())
-            Debug.Log("Client Started");
-        else
-            Debug.Log("Client Failed to Start");
+        // if (NetworkManager.Singleton.StartClient())
+        //     Debug.Log("Client Started");
+        // else
+        //     Debug.Log("Client Failed to Start");
     }
 
     public void Disconnect()
@@ -100,6 +101,32 @@ public class GameNetworkManager : MonoBehaviour
         if (NetworkManager.Singleton == null) return;
 
         NetworkManager.Singleton.Shutdown();
+    }
+
+    public void StartGame()
+    {
+        if (!currentLobby.HasValue) return;
+
+        SceneManager.LoadScene(1);
+        if (currentLobby.Value.IsOwnedBy(SteamClient.SteamId))
+        {
+            NetworkManager.Singleton.OnServerStarted += OnServerStarted;
+
+            if (NetworkManager.Singleton.StartHost())
+                Debug.Log("Host Started");
+            else
+                Debug.Log("Host Failed to Start");
+        }
+        else
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
+
+            if (NetworkManager.Singleton.StartClient())
+                Debug.Log("Client Started");
+            else
+                Debug.Log("Client Failed to Start");
+        }
     }
 
     #region Steam Callbacks

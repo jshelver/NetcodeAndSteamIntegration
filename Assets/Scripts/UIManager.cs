@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 using Netcode.Transports.Facepunch;
 using Steamworks;
 using Steamworks.Data;
@@ -17,6 +18,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] TextMeshProUGUI lobbyTitleText;
     [SerializeField] GameObject playerListItem;
     [SerializeField] GameObject playerListHolder;
+    [SerializeField] Button startButton;
 
     void Start()
     {
@@ -55,6 +57,15 @@ public class UIManager : MonoBehaviour
         lobbyMenu.SetActive(true);
         SetLobbyTitle(lobby);
         UpdateMemberList(lobby.Members);
+        if (lobby.IsOwnedBy(SteamClient.SteamId))
+        {
+            // Only the lobby owner can start the game
+            startButton.interactable = true;
+        }
+        else
+        {
+            startButton.interactable = false;
+        }
     }
 
     private void SetLobbyTitle(Lobby lobby)
@@ -109,5 +120,10 @@ public class UIManager : MonoBehaviour
     public void InvitePlayers()
     {
         SteamFriends.OpenGameInviteOverlay(GameNetworkManager.currentLobby.Value.Id);
+    }
+
+    public void StartGame()
+    {
+        GameNetworkManager.instance.StartGame();
     }
 }
