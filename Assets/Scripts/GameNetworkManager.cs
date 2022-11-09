@@ -10,7 +10,7 @@ public class GameNetworkManager : MonoBehaviour
 {
     public static GameNetworkManager instance;
 
-    public Lobby? currentLobby = null;
+    public static Lobby? currentLobby = null;
 
     FacepunchTransport transport;
 

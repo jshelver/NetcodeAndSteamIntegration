@@ -105,4 +105,9 @@ public class UIManager : MonoBehaviour
     {
         Application.Quit();
     }
+
+    public void InvitePlayers()
+    {
+        SteamFriends.OpenGameInviteOverlay(GameNetworkManager.currentLobby.Value.Id);
+    }
 }
