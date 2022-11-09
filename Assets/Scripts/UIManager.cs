@@ -12,7 +12,7 @@ public class UIManager : MonoBehaviour
     public static UIManager instance;
 
     [Header("References")]
-    [SerializeField] GameObject startHostButton;
+    [SerializeField] GameObject mainMenu;
     [SerializeField] GameObject lobbyMenu;
     [SerializeField] TextMeshProUGUI lobbyTitleText;
     [SerializeField] GameObject playerListItem;
@@ -30,7 +30,7 @@ public class UIManager : MonoBehaviour
             return;
         }
         lobbyMenu.SetActive(false);
-        startHostButton.SetActive(true);
+        mainMenu.SetActive(true);
     }
 
     void Update()
@@ -40,13 +40,13 @@ public class UIManager : MonoBehaviour
 
     public void StartHost(int maxClients)
     {
-        startHostButton.SetActive(false);
+        mainMenu.SetActive(false);
         GameNetworkManager.instance.StartHost(maxClients);
     }
 
     public void StartClient(Lobby lobby)
     {
-        startHostButton.SetActive(false);
+        mainMenu.SetActive(false);
         UpdateLobbyMenu(lobby);
     }
 
@@ -57,7 +57,7 @@ public class UIManager : MonoBehaviour
         UpdateMemberList(lobby.Members);
     }
 
-    public void SetLobbyTitle(Lobby lobby)
+    private void SetLobbyTitle(Lobby lobby)
     {
         string lobbyName = lobby.Owner.Name + "'s Lobby";
 
@@ -66,17 +66,17 @@ public class UIManager : MonoBehaviour
 
     public void LobbyCreationFailed()
     {
-        startHostButton.SetActive(true);
+        mainMenu.SetActive(true);
     }
 
     public void LeaveLobby()
     {
         GameNetworkManager.instance.Disconnect();
         lobbyMenu.SetActive(false);
-        startHostButton.SetActive(true);
+        mainMenu.SetActive(true);
     }
 
-    public void UpdateMemberList(IEnumerable<Friend> members)
+    private void UpdateMemberList(IEnumerable<Friend> members)
     {
         foreach (Transform child in playerListHolder.transform)
         {
@@ -99,5 +99,10 @@ public class UIManager : MonoBehaviour
         PlayerListItemData newPlayer = Instantiate(playerListItem, playerListHolder.transform).GetComponent<PlayerListItemData>();
         newPlayer.transform.SetAsLastSibling();
         newPlayer.playerNameText.text = playerName;
+    }
+
+    public void QuitGame()
+    {
+        Application.Quit();
     }
 }
