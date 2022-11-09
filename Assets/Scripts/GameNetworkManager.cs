@@ -14,7 +14,6 @@ public class GameNetworkManager : MonoBehaviour
 
     FacepunchTransport transport;
 
-
     void Awake()
     {
         if (instance == null)
@@ -84,7 +83,7 @@ public class GameNetworkManager : MonoBehaviour
 
         string lobbyName = lobby.GetData("name");
 
-        UIManager.instance.StartClient(lobbyName, lobby.Members);
+        UIManager.instance.StartClient(lobby);
 
         transport.targetSteamId = steamId;
 
@@ -120,8 +119,7 @@ public class GameNetworkManager : MonoBehaviour
         lobby.SetData("name", lobbyName);
         lobby.SetJoinable(true);
 
-        UIManager.instance.SetLobbyTitle(lobbyName);
-        UIManager.instance.UpdateMemberList(lobby.Members);
+        UIManager.instance.UpdateLobbyMenu(lobby);
 
         currentLobby = lobby;
         Debug.Log($"Lobby Created: {lobby.Id}", this);
@@ -131,15 +129,20 @@ public class GameNetworkManager : MonoBehaviour
     {
         if (NetworkManager.Singleton.IsHost) return;
 
-        Debug.Log($"Lobby Joined: {lobby.Id}", this);
+        Debug.Log($"Lobby Successfully Joined: {lobby.Id}", this);
     }
 
     private void OnLobbyMemberJoined(Lobby lobby, Friend friend)
     {
         Debug.Log($"{friend.Name} Joined", this);
+        UIManager.instance.UpdateLobbyMenu(lobby);
     }
 
-    private void OnLobbyMemberLeave(Lobby lobby, Friend friend) { }
+    private void OnLobbyMemberLeave(Lobby lobby, Friend friend)
+    {
+        Debug.Log($"{friend.Name} Left", this);
+        UIManager.instance.UpdateLobbyMenu(lobby);
+    }
 
     private void OnLobbyInvite(Friend friend, Lobby lobby) => Debug.Log($"You got a invite from {friend.Name}", this);
 
@@ -147,12 +150,12 @@ public class GameNetworkManager : MonoBehaviour
 
     private async void OnGameLobbyJoinRequested(Lobby lobby, SteamId steamId)
     {
-        Debug.Log($"Joining lobby: {lobby.Id}", this);
+        Debug.Log($"Joining Lobby: {lobby.Id}", this);
         RoomEnter joinedLobbySuccess = await lobby.Join();
 
         if (joinedLobbySuccess != RoomEnter.Success)
         {
-            Debug.LogError($"Failed to join lobby: {joinedLobbySuccess}", this);
+            Debug.LogError($"Failed to Join Lobby: {joinedLobbySuccess}", this);
             return;
         }
         else

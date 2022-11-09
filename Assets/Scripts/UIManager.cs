@@ -44,22 +44,29 @@ public class UIManager : MonoBehaviour
         GameNetworkManager.instance.StartHost(maxClients);
     }
 
-    public void StartClient(string lobbyName, IEnumerable<Friend> members)
+    public void StartClient(Lobby lobby)
     {
         startHostButton.SetActive(false);
-        SetLobbyTitle(lobbyName);
-        UpdateMemberList(members);
+        UpdateLobbyMenu(lobby);
+    }
+
+    public void UpdateLobbyMenu(Lobby lobby)
+    {
+        lobbyMenu.SetActive(true);
+        SetLobbyTitle(lobby);
+        UpdateMemberList(lobby.Members);
+    }
+
+    public void SetLobbyTitle(Lobby lobby)
+    {
+        string lobbyName = lobby.Owner.Name + "'s Lobby";
+
+        lobbyTitleText.text = string.IsNullOrEmpty(lobbyName) ? "Lobby" : lobbyName;
     }
 
     public void LobbyCreationFailed()
     {
         startHostButton.SetActive(true);
-    }
-
-    public void SetLobbyTitle(string title)
-    {
-        lobbyMenu.SetActive(true);
-        lobbyTitleText.text = string.IsNullOrEmpty(title) ? "Lobby" : title;
     }
 
     public void LeaveLobby()
