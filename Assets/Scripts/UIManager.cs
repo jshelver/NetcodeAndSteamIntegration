@@ -44,6 +44,13 @@ public class UIManager : MonoBehaviour
         GameNetworkManager.instance.StartHost(maxClients);
     }
 
+    public void StartClient(string lobbyName, IEnumerable<Friend> members)
+    {
+        startHostButton.SetActive(false);
+        SetLobbyTitle(lobbyName);
+        UpdateMemberList(members);
+    }
+
     public void LobbyCreationFailed()
     {
         startHostButton.SetActive(true);

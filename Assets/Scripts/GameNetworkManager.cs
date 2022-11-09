@@ -77,10 +77,14 @@ public class GameNetworkManager : MonoBehaviour
         await SteamMatchmaking.CreateLobbyAsync(maxClients);
     }
 
-    public void StartClient(SteamId steamId)
+    public void StartClient(SteamId steamId, Lobby lobby)
     {
         NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
         NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
+
+        string lobbyName = lobby.GetData("name");
+
+        UIManager.instance.StartClient(lobbyName, lobby.Members);
 
         transport.targetSteamId = steamId;
 
@@ -118,8 +122,6 @@ public class GameNetworkManager : MonoBehaviour
 
         UIManager.instance.SetLobbyTitle(lobbyName);
         UIManager.instance.UpdateMemberList(lobby.Members);
-        UIManager.instance.SetLobbyTitle(lobbyName);
-        UIManager.instance.UpdateMemberList(lobby.Members);
 
         currentLobby = lobby;
         Debug.Log($"Lobby Created: {lobby.Id}", this);
@@ -129,15 +131,13 @@ public class GameNetworkManager : MonoBehaviour
     {
         if (NetworkManager.Singleton.IsHost) return;
 
-        string lobbyName = lobby.GetData("name");
-
-        UIManager.instance.SetLobbyTitle(lobbyName);
-        UIManager.instance.UpdateMemberList(lobby.Members);
-
-        StartClient(lobby.Id);
+        Debug.Log($"Lobby Joined: {lobby.Id}", this);
     }
 
-    private void OnLobbyMemberJoined(Lobby lobby, Friend friend) { }
+    private void OnLobbyMemberJoined(Lobby lobby, Friend friend)
+    {
+        Debug.Log($"{friend.Name} Joined", this);
+    }
 
     private void OnLobbyMemberLeave(Lobby lobby, Friend friend) { }
 
@@ -145,9 +145,22 @@ public class GameNetworkManager : MonoBehaviour
 
     private void OnLobbyGameCreated(Lobby lobby, uint value, ushort value2, SteamId steamId) { }
 
-    private void OnGameLobbyJoinRequested(Lobby lobby, SteamId steamId)
+    private async void OnGameLobbyJoinRequested(Lobby lobby, SteamId steamId)
     {
-        StartClient(lobby.Id);
+        Debug.Log($"Joining lobby: {lobby.Id}", this);
+        RoomEnter joinedLobbySuccess = await lobby.Join();
+
+        if (joinedLobbySuccess != RoomEnter.Success)
+        {
+            Debug.LogError($"Failed to join lobby: {joinedLobbySuccess}", this);
+            return;
+        }
+        else
+        {
+            currentLobby = lobby;
+        }
+
+        StartClient(lobby.Id, lobby);
     }
 
     #endregion
