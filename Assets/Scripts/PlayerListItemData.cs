@@ -5,5 +5,6 @@ using TMPro;
 
 public class PlayerListItemData : MonoBehaviour
 {
+    [Header("Player Name Text References")]
     public TextMeshProUGUI playerNameText;
 }

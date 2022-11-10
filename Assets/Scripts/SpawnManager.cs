@@ -6,13 +6,14 @@ using UnityEngine;
 
 public class SpawnManager : MonoBehaviour
 {
+    [Header("References")]
     [SerializeField] GameObject playerPrefab;
 
     void Start()
     {
         GameObject player = Instantiate(playerPrefab, Vector3.up, Quaternion.identity);
         NetworkObject networkObject = player.GetComponent<NetworkObject>();
-        networkObject.Spawn();
+        networkObject.SpawnAsPlayerObject(NetworkManager.Singleton.LocalClientId);
     }
 
     void Update()

@@ -7,8 +7,9 @@ using Netcode.Transports.Facepunch;
 using Steamworks;
 using Steamworks.Data;
 using Unity.Netcode;
+using UnityEngine.SceneManagement;
 
-public class UIManager : MonoBehaviour
+public class UIManager : NetworkBehaviour
 {
     public static UIManager instance;
 
@@ -33,17 +34,13 @@ public class UIManager : MonoBehaviour
         }
         lobbyMenu.SetActive(false);
         mainMenu.SetActive(true);
-    }
-
-    void Update()
-    {
-
+        DontDestroyOnLoad(gameObject);
     }
 
     public void StartHost(int maxClients)
     {
         mainMenu.SetActive(false);
-        GameNetworkManager.instance.StartHost(maxClients);
+        GameNetworkManager.instance.StartLobbyHost(maxClients);
     }
 
     public void StartClient(Lobby lobby)
@@ -124,6 +121,36 @@ public class UIManager : MonoBehaviour
 
     public void StartGame()
     {
-        GameNetworkManager.instance.StartGame();
+        StartGameServerRpc();
+    }
+
+    [ServerRpc]
+    public void StartGameServerRpc()
+    {
+        if (!GameNetworkManager.currentLobby.HasValue) return;
+
+        GameNetworkManager.currentLobby.Value.SetJoinable(false);
+
+        Debug.Log("Start Game Server RPC");
+        StartGameClientRpc();
+    }
+
+    [ClientRpc]
+    public void StartGameClientRpc()
+    {
+        if (!GameNetworkManager.currentLobby.HasValue) return;
+        Debug.Log("Start Game Client RPC");
+
+        // if (GameNetworkManager.currentLobby.Value.IsOwnedBy(SteamClient.SteamId))
+        // {
+        //     GameNetworkManager.instance.StartGameHost();
+        // }
+        // else
+        // {
+        //     GameNetworkManager.instance.StartGameClient();
+        // }
+
+        // Updates scene to the game scene
+        SceneManager.LoadScene(1);
     }
 }
