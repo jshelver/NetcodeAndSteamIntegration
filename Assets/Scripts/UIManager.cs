@@ -141,15 +141,6 @@ public class UIManager : NetworkBehaviour
         if (!GameNetworkManager.currentLobby.HasValue) return;
         Debug.Log("Start Game Client RPC");
 
-        // if (GameNetworkManager.currentLobby.Value.IsOwnedBy(SteamClient.SteamId))
-        // {
-        //     GameNetworkManager.instance.StartGameHost();
-        // }
-        // else
-        // {
-        //     GameNetworkManager.instance.StartGameClient();
-        // }
-
         // Updates scene to the game scene
         SceneManager.LoadScene(1);
     }

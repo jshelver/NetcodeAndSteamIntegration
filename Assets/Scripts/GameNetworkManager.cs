@@ -32,16 +32,12 @@ public class GameNetworkManager : MonoBehaviour
 
     void Start()
     {
-        Debug.developerConsoleVisible = true;
-
         transport = GetComponent<FacepunchTransport>();
 
         SteamMatchmaking.OnLobbyCreated += OnLobbyCreated;
         SteamMatchmaking.OnLobbyEntered += OnLobbyEntered;
         SteamMatchmaking.OnLobbyMemberJoined += OnLobbyMemberJoined;
         SteamMatchmaking.OnLobbyMemberLeave += OnLobbyMemberLeave;
-        SteamMatchmaking.OnLobbyInvite += OnLobbyInvite;
-        SteamMatchmaking.OnLobbyGameCreated += OnLobbyGameCreated;
         SteamFriends.OnGameLobbyJoinRequested += OnGameLobbyJoinRequested;
     }
 
@@ -51,15 +47,7 @@ public class GameNetworkManager : MonoBehaviour
         SteamMatchmaking.OnLobbyEntered -= OnLobbyEntered;
         SteamMatchmaking.OnLobbyMemberJoined -= OnLobbyMemberJoined;
         SteamMatchmaking.OnLobbyMemberLeave -= OnLobbyMemberLeave;
-        SteamMatchmaking.OnLobbyInvite -= OnLobbyInvite;
-        SteamMatchmaking.OnLobbyGameCreated -= OnLobbyGameCreated;
         SteamFriends.OnGameLobbyJoinRequested += OnGameLobbyJoinRequested;
-
-        if (NetworkManager.Singleton == null) return;
-
-        NetworkManager.Singleton.OnServerStarted -= OnServerStarted;
-        NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
-        NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
     }
 
     void OnApplicationQuit()
@@ -69,25 +57,9 @@ public class GameNetworkManager : MonoBehaviour
 
     public async void StartLobbyHost(int maxClients = 100)
     {
-        StartGameHost();
-
         await SteamMatchmaking.CreateLobbyAsync(maxClients);
-    }
 
-    public void StartLobbyClient(SteamId steamId, Lobby lobby)
-    {
-        StartGameClient();
-
-        string lobbyName = lobby.GetData("name");
-
-        UIManager.instance.StartClient(lobby);
-
-        transport.targetSteamId = steamId;
-    }
-
-    public void StartGameHost()
-    {
-        NetworkManager.Singleton.OnServerStarted += OnServerStarted;
+        transport.targetSteamId = SteamClient.SteamId;
 
         if (NetworkManager.Singleton.StartHost())
             Debug.Log("Host Started");
@@ -95,10 +67,11 @@ public class GameNetworkManager : MonoBehaviour
             Debug.Log("Host Failed to Start");
     }
 
-    public void StartGameClient()
+    public void StartLobbyClient(Lobby lobby)
     {
-        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
+        transport.targetSteamId = lobby.Owner.Id;
+
+        UIManager.instance.StartClient(lobby);
 
         if (NetworkManager.Singleton.StartClient())
             Debug.Log("Client Started");
@@ -135,7 +108,6 @@ public class GameNetworkManager : MonoBehaviour
         UIManager.instance.UpdateLobbyMenu(lobby);
 
         currentLobby = lobby;
-        Debug.Log($"Lobby Created: {lobby.Id}", this);
     }
 
     private void OnLobbyEntered(Lobby lobby)
@@ -157,44 +129,22 @@ public class GameNetworkManager : MonoBehaviour
         UIManager.instance.UpdateLobbyMenu(lobby);
     }
 
-    private void OnLobbyInvite(Friend friend, Lobby lobby) => Debug.Log($"You got a invite from {friend.Name}", this);
-
-    private void OnLobbyGameCreated(Lobby lobby, uint value, ushort value2, SteamId steamId) { }
-
     private async void OnGameLobbyJoinRequested(Lobby lobby, SteamId steamId)
     {
-        Debug.Log($"Joining Lobby: {lobby.Id}", this);
         RoomEnter joinedLobbySuccess = await lobby.Join();
+
+        await SteamMatchmaking.JoinLobbyAsync(lobby.Id);
 
         if (joinedLobbySuccess != RoomEnter.Success)
         {
             Debug.LogError($"Failed to Join Lobby: {joinedLobbySuccess}", this);
             return;
         }
-        else
-        {
-            currentLobby = lobby;
-        }
 
-        StartLobbyClient(lobby.Id, lobby);
+        currentLobby = lobby;
+
+        StartLobbyClient(lobby);
     }
 
     #endregion
-
-    #region Network Callbacks
-
-    private void OnServerStarted() => Debug.Log("Server Started", this);
-
-    private void OnClientConnected(ulong clientId) => Debug.Log($"Client Connected, clientId: {clientId}");
-
-    private void OnClientDisconnect(ulong clientId)
-    {
-        Debug.Log($"Client Disconnected, clientId: {clientId}");
-
-        NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
-        NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
-    }
-
-    #endregion
-
 }
