@@ -346,10 +346,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   walkSpeed: 5
-  runSpeed: 9
+  runSpeed: 8.5
   speedChangeSmoothTime: 0.1
   jumpHeight: 1.5
-  gravity: -20
+  gravity: -25
 --- !u!114 &3287638409443885738
 MonoBehaviour:
   m_ObjectHideFlags: 0
