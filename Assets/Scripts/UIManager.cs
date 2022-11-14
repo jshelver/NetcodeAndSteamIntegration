@@ -20,6 +20,7 @@ public class UIManager : NetworkBehaviour
     [SerializeField] GameObject playerListItem;
     [SerializeField] GameObject playerListHolder;
     [SerializeField] Button startButton;
+    [SerializeField] GameObject playerPrefab;
 
     void Start()
     {
@@ -142,6 +143,30 @@ public class UIManager : NetworkBehaviour
         Debug.Log("Start Game Client RPC");
 
         // Updates scene to the game scene
-        SceneManager.LoadScene(1);
+        StartCoroutine(LoadGameScene());
+    }
+
+    private IEnumerator LoadGameScene()
+    {
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(1);
+
+        // Wait until the asynchronous scene fully loads
+        while (!asyncLoad.isDone)
+        {
+            yield return null;
+        }
+        SpawnPlayerServerRpc();
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SpawnPlayerServerRpc(ServerRpcParams serverRpcParams = default)
+    {
+        // Spawn the player on the server and get the NetworkObject
+        GameObject player = Instantiate(playerPrefab, Vector3.up, Quaternion.identity);
+        NetworkObject networkObject = player.GetComponent<NetworkObject>();
+
+        // Spawn the player on the clients with correct owner
+        ulong clientId = serverRpcParams.Receive.SenderClientId;
+        networkObject.SpawnWithOwnership(clientId);
     }
 }

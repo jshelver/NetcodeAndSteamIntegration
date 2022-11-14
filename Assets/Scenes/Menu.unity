@@ -1461,7 +1461,12 @@ MonoBehaviour:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1143884086}
     PlayerPrefab: {fileID: 0}
-    NetworkPrefabs: []
+    NetworkPrefabs:
+    - Override: 0
+      Prefab: {fileID: 9212771074208104302, guid: 5ec8ad3570708924692e54499ece79b1, type: 3}
+      SourcePrefabToOverride: {fileID: 0}
+      SourceHashToOverride: 0
+      OverridingTargetPrefab: {fileID: 0}
     TickRate: 30
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
@@ -2544,6 +2549,7 @@ MonoBehaviour:
   playerListItem: {fileID: 2232547843126905316, guid: e42452a0d46089e409c24b3df04a9e5f, type: 3}
   playerListHolder: {fileID: 1625088347}
   startButton: {fileID: 1087194855}
+  playerPrefab: {fileID: 9212771074208104302, guid: 5ec8ad3570708924692e54499ece79b1, type: 3}
 --- !u!4 &2124348264
 Transform:
   m_ObjectHideFlags: 0

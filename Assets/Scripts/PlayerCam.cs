@@ -17,7 +17,6 @@ public class PlayerCam : NetworkBehaviour
 
     void Start()
     {
-        if (!IsOwner) return;
 
         // Parent the main camera under the camera holder
         mainCamera = Camera.main;
