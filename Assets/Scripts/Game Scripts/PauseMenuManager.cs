@@ -21,10 +21,9 @@ public class PauseMenuManager : MonoBehaviour
 
     public void ReturnToMenu()
     {
-        // Not currently working
+        GameNetworkManager.instance.Disconnect();
 
-        // SceneManager.LoadScene(0);
-        // GameNetworkManager.instance.Disconnect();
+        SceneManager.LoadScene(0);
     }
 
     public void QuitGame()

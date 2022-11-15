@@ -1,3 +1,4 @@
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,12 +6,24 @@ using TMPro;
 
 public class DebugConsole : MonoBehaviour
 {
+    DebugConsole instance;
+
     static string myLog = "";
     private string output;
     private string stack;
 
     void Start()
     {
+        if (instance == null)
+        {
+            instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         DontDestroyOnLoad(gameObject);
     }
 

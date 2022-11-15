@@ -7,7 +7,7 @@ using Steamworks.Data;
 using Unity.Netcode;
 using UnityEngine.SceneManagement;
 
-public class GameNetworkManager : MonoBehaviour
+public class GameNetworkManager : NetworkManager
 {
     public static GameNetworkManager instance;
 
@@ -39,6 +39,9 @@ public class GameNetworkManager : MonoBehaviour
         SteamMatchmaking.OnLobbyMemberJoined += OnLobbyMemberJoined;
         SteamMatchmaking.OnLobbyMemberLeave += OnLobbyMemberLeave;
         SteamFriends.OnGameLobbyJoinRequested += OnGameLobbyJoinRequested;
+
+        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
     }
 
     void OnDestroy()
@@ -48,6 +51,11 @@ public class GameNetworkManager : MonoBehaviour
         SteamMatchmaking.OnLobbyMemberJoined -= OnLobbyMemberJoined;
         SteamMatchmaking.OnLobbyMemberLeave -= OnLobbyMemberLeave;
         SteamFriends.OnGameLobbyJoinRequested += OnGameLobbyJoinRequested;
+
+        if (NetworkManager.Singleton != null) return;
+
+        NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+        NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
     }
 
     void OnApplicationQuit()
@@ -55,8 +63,9 @@ public class GameNetworkManager : MonoBehaviour
         Disconnect();
     }
 
-    public async void StartLobbyHost(int maxClients = 100)
+    public async void StartLobbyHost(int maxClients = 4)
     {
+        // Create a new steam lobby
         await SteamMatchmaking.CreateLobbyAsync(maxClients);
 
         transport.targetSteamId = SteamClient.SteamId;
@@ -102,7 +111,7 @@ public class GameNetworkManager : MonoBehaviour
         string lobbyName = lobby.Owner.Name + "'s Lobby";
 
         lobby.SetFriendsOnly();
-        lobby.SetData("name", lobbyName);
+        lobby.SetData("HostAddress", lobbyName);
         lobby.SetJoinable(true);
 
         UIManager.instance.UpdateLobbyMenu(lobby);
@@ -131,19 +140,83 @@ public class GameNetworkManager : MonoBehaviour
 
     private async void OnGameLobbyJoinRequested(Lobby lobby, SteamId steamId)
     {
-        RoomEnter joinedLobbySuccess = await lobby.Join();
+        // Try to enter lobby
+        RoomEnter tryJoinLobbySuccess = await lobby.Join();
 
-        await SteamMatchmaking.JoinLobbyAsync(lobby.Id);
-
-        if (joinedLobbySuccess != RoomEnter.Success)
+        if (tryJoinLobbySuccess != RoomEnter.Success)
         {
-            Debug.LogError($"Failed to Join Lobby: {joinedLobbySuccess}", this);
+            Debug.LogError($"Failed to Join Lobby: {tryJoinLobbySuccess}", this);
             return;
         }
 
+        // Once client has checked if it has permission to enter lobby, actually connect to steam lobby
+        await SteamMatchmaking.JoinLobbyAsync(lobby.Id);
+
         currentLobby = lobby;
 
+        // Now connect client to server (via steam socket)
         StartLobbyClient(lobby);
+    }
+
+    #endregion
+
+    #region Network Callbacks
+
+    private void OnClientConnected(ulong clientId)
+    {
+        Debug.Log($"Client Connected: {clientId}", this);
+    }
+
+    private void OnClientDisconnected(ulong clientId)
+    {
+        Debug.Log($"Client Disconnected: {clientId}", this);
+    }
+
+    #endregion
+
+    #region Scene Management
+
+    [ServerRpc]
+    public void StartGameServerRpc()
+    {
+        if (!currentLobby.HasValue) return;
+
+        currentLobby.Value.SetJoinable(false);
+
+        UIManager.instance.gameObject.GetComponent<NetworkObject>().Despawn();
+
+        StartGameClientRpc();
+    }
+
+    [ClientRpc]
+    private void StartGameClientRpc()
+    {
+        // Updates scene to the game scene
+        StartCoroutine(LoadGameScene());
+    }
+
+    private IEnumerator LoadGameScene()
+    {
+        AsyncOperation asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(1);
+
+        // Wait until the asynchronous scene fully loads
+        while (!asyncLoad.isDone)
+        {
+            yield return null;
+        }
+        SpawnPlayerServerRpc();
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SpawnPlayerServerRpc(ServerRpcParams serverRpcParams = default)
+    {
+        // Spawn the player on the server and get the NetworkObject
+        GameObject player = Instantiate(PlayerData.instance.playerPrefab, Vector3.up, Quaternion.identity);
+        NetworkObject networkObject = player.GetComponent<NetworkObject>();
+
+        // Spawn the player on the clients with correct owner
+        ulong clientId = serverRpcParams.Receive.SenderClientId;
+        networkObject.SpawnWithOwnership(clientId);
     }
 
     #endregion

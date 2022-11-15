@@ -35,12 +35,13 @@ public class UIManager : NetworkBehaviour
         }
         lobbyMenu.SetActive(false);
         mainMenu.SetActive(true);
-        DontDestroyOnLoad(gameObject);
     }
 
-    public void StartHost(int maxClients)
+    public void StartHost()
     {
         mainMenu.SetActive(false);
+
+        int maxClients = 4;
         GameNetworkManager.instance.StartLobbyHost(maxClients);
     }
 
@@ -122,51 +123,6 @@ public class UIManager : NetworkBehaviour
 
     public void StartGame()
     {
-        StartGameServerRpc();
-    }
-
-    [ServerRpc]
-    public void StartGameServerRpc()
-    {
-        if (!GameNetworkManager.currentLobby.HasValue) return;
-
-        GameNetworkManager.currentLobby.Value.SetJoinable(false);
-
-        Debug.Log("Start Game Server RPC");
-        StartGameClientRpc();
-    }
-
-    [ClientRpc]
-    public void StartGameClientRpc()
-    {
-        if (!GameNetworkManager.currentLobby.HasValue) return;
-        Debug.Log("Start Game Client RPC");
-
-        // Updates scene to the game scene
-        StartCoroutine(LoadGameScene());
-    }
-
-    private IEnumerator LoadGameScene()
-    {
-        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(1);
-
-        // Wait until the asynchronous scene fully loads
-        while (!asyncLoad.isDone)
-        {
-            yield return null;
-        }
-        SpawnPlayerServerRpc();
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    private void SpawnPlayerServerRpc(ServerRpcParams serverRpcParams = default)
-    {
-        // Spawn the player on the server and get the NetworkObject
-        GameObject player = Instantiate(playerPrefab, Vector3.up, Quaternion.identity);
-        NetworkObject networkObject = player.GetComponent<NetworkObject>();
-
-        // Spawn the player on the clients with correct owner
-        ulong clientId = serverRpcParams.Receive.SenderClientId;
-        networkObject.SpawnWithOwnership(clientId);
+        GameNetworkManager.instance.StartGameServerRpc();
     }
 }
